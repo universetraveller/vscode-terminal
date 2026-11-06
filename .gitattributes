@@ -1,0 +1,5 @@
+* text=auto
+LICENSE.txt text eol=crlf
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.ps1 text eol=lf

@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.json",
+	"exclude": [],
+	"include": [
+		"src/companion/**/*.ts", "test/companion.test.ts",
+		"vendor/vscode/src/vscode-dts/vscode.d.ts",
+		"vendor/vscode/src/typings/vscode-globals-*.d.ts"
+	]
+}

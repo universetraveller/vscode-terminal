@@ -1,0 +1,10 @@
+# Local dependencies, builds and validation profiles never belong in the source repository.
+/node_modules/
+/.build/
+/.cache/
+/dist/
+*.tsbuildinfo
+*.snap.actual
+.DS_Store
+npm-debug.log
+package-lock.json

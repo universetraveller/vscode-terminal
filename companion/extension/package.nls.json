@@ -1,0 +1,6 @@
+{
+	"displayName": "Terminal OSS Companion",
+	"description": "Open a terminal-focused window in the isolated Terminal OSS profile.",
+	"newTerminal": "New Terminal",
+	"newWindow": "New Terminal Window"
+}

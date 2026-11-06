@@ -1,0 +1,110 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License. See License.txt in the project root for license information.
+
+name: Terminal
+
+on:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Run full platform GUI and package validation
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terminal-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Focused Linux Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/cache@v4
+        with:
+          path: .cache/pnpm
+          key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-${{ runner.arch }}-
+      - name: Install focused dependencies without an Electron binary
+        run: |
+          corepack enable
+          corepack pnpm install --frozen-lockfile --store-dir .cache/pnpm
+      - name: Check both adapters and upstream pins
+        run: |
+          corepack pnpm check
+          corepack pnpm companion:check
+      - name: Test boundaries and build isolation
+        run: |
+          corepack pnpm test
+          corepack pnpm companion:test
+      - name: Package the companion without a runtime
+        run: corepack pnpm companion:package
+
+  platforms:
+    name: Full Platform Validation (${{ matrix.os }})
+    needs: checks
+    if: (github.event_name == 'workflow_dispatch' && inputs.full) || startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Enable pnpm
+        run: corepack enable
+      - uses: actions/cache@v4
+        with:
+          path: .cache/pnpm
+          key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-${{ runner.arch }}-
+      - name: Install terminal dependencies
+        run: corepack pnpm install --frozen-lockfile --store-dir .cache/pnpm
+      - name: Check upstream dependency versions and adapter types
+        run: corepack pnpm check
+      - name: Test terminal boundaries and build isolation
+        run: corepack pnpm test
+      - name: Check installed VS Code companion adapter types
+        run: corepack pnpm companion:check
+      - name: Test companion profile isolation and concurrent window requests
+        run: corepack pnpm companion:test
+      - name: Package companion launchers without a runtime
+        run: corepack pnpm companion:package
+      - name: Check real shells and window lifetimes
+        if: runner.os != 'Linux'
+        run: corepack pnpm smoke
+      - name: Check real shells and window lifetimes on Linux
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum corepack pnpm smoke
+      - name: Package terminal application
+        run: corepack pnpm package
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terminal-validation-${{ runner.os }}-${{ runner.arch }}
+          path: |
+            .build/terminal/*-report.json
+            .build/terminal/evidence/*.png
+          if-no-files-found: ignore

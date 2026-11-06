@@ -1,0 +1,46 @@
+{
+	"name": "terminal-oss",
+	"private": true,
+	"type": "module",
+	"packageManager": "pnpm@12.16.0",
+	"scripts": {
+		"build": "node scripts/build.mjs",
+		"start": "node scripts/build.mjs --launch",
+		"check": "node scripts/sync.mjs --check && node node_modules/typescript/bin/tsc6 -p tsconfig.json",
+		"test": "node scripts/build.mjs --test",
+		"smoke": "node scripts/smoke.mjs",
+		"benchmark": "node scripts/smoke.mjs --benchmark",
+		"package": "node scripts/package.mjs",
+		"sync-upstream": "node scripts/sync.mjs",
+		"upstream:check": "node scripts/upstream.mjs --check",
+		"companion": "node scripts/companion.mjs --launch",
+		"companion:check": "node node_modules/typescript/bin/tsc6 -p tsconfig.companion.json",
+		"companion:test": "node scripts/companion.mjs --test",
+		"companion:package": "node scripts/companion.mjs --package",
+		"companion:smoke": "node scripts/companion-smoke.mjs"
+	},
+	"dependencies": {
+		"@xterm/addon-search": "0.17.0-beta.301",
+		"@xterm/addon-unicode11": "0.10.0-beta.301",
+		"@xterm/addon-webgl": "0.20.0-beta.300",
+		"@xterm/headless": "6.1.0-beta.303",
+		"@xterm/xterm": "6.1.0-beta.304",
+		"node-pty": "1.2.0-beta.18"
+	},
+	"optionalDependencies": {
+		"@vscode/windows-process-tree": "0.8.0",
+		"@vscode/windows-registry": "1.3.0"
+	},
+	"devDependencies": {
+		"@electron/packager": "^19.0.1",
+		"@types/node": "24.x",
+		"@types/trusted-types": "^2.0.7",
+		"electron": "43.8.6",
+		"esbuild": "0.27.2",
+		"playwright-core": "1.61.0-alpha-2026-06-04",
+		"typescript": "npm:@typescript/typescript6@^6.0.2"
+	},
+	"version": "0.1.0",
+	"description": "Independent terminal application built from pinned VS Code terminal components",
+	"license": "MIT"
+}

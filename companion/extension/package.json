@@ -1,0 +1,23 @@
+{
+	"name": "companion",
+	"displayName": "%displayName%",
+	"description": "%description%",
+	"publisher": "terminal-oss",
+	"version": "0.1.0",
+	"license": "MIT",
+	"engines": { "vscode": "^1.141.0" },
+	"main": "./extension.cjs",
+	"activationEvents": ["onStartupFinished"],
+	"capabilities": { "untrustedWorkspaces": { "supported": true }, "virtualWorkspaces": true },
+	"contributes": {
+		"commands": [
+			{ "command": "terminalOss.newTerminal", "title": "%newTerminal%", "category": "Terminal OSS", "enablement": "terminalOssCompanion" },
+			{ "command": "terminalOss.newWindow", "title": "%newWindow%", "category": "Terminal OSS", "enablement": "terminalOssCompanion" }
+		],
+		"keybindings": [
+			{ "command": "terminalOss.newTerminal", "key": "ctrl+shift+t", "mac": "cmd+t", "when": "terminalOssCompanion && terminalFocus" },
+			{ "command": "workbench.action.terminal.split", "key": "ctrl+shift+d", "mac": "cmd+d", "when": "terminalOssCompanion && terminalFocus" },
+			{ "command": "terminalOss.newWindow", "key": "ctrl+shift+n", "mac": "cmd+shift+n", "when": "terminalOssCompanion" }
+		]
+	}
+}

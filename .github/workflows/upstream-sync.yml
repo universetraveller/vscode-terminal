@@ -1,0 +1,69 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License. See License.txt in the project root for license information.
+
+name: Upstream Sync
+
+on:
+  schedule:
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: VS Code branch, tag, or commit to propose
+        type: string
+        default: main
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          submodules: false
+      - name: Check metadata before downloading source or dependencies
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_REF: ${{ inputs.ref || 'main' }}
+        run: node scripts/upstream-update.mjs detect
+      - name: Fetch only the selected source snapshot
+        if: steps.detect.outputs.mode == 'prepare'
+        env:
+          UPSTREAM_COMMIT: ${{ steps.detect.outputs.commit }}
+          UPSTREAM_BRANCH: ${{ steps.detect.outputs.branch }}
+        run: node scripts/upstream-update.mjs prepare
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.mode == 'prepare'
+        with:
+          node-version-file: vendor/vscode/.nvmrc
+      - name: Synchronize pins and lockfile without installing Electron
+        if: steps.detect.outputs.mode == 'prepare'
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: |
+          corepack enable
+          node scripts/sync.mjs
+          corepack pnpm install --lockfile-only --ignore-scripts
+      - name: Publish one update PR and dispatch focused checks
+        if: steps.detect.outputs.mode == 'prepare' || steps.detect.outputs.mode == 'reuse'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_MODE: ${{ steps.detect.outputs.mode }}
+          UPSTREAM_COMMIT: ${{ steps.detect.outputs.commit }}
+          UPSTREAM_BRANCH: ${{ steps.detect.outputs.branch }}
+          UPSTREAM_BASE: ${{ github.event.repository.default_branch }}
+        run: node scripts/upstream-update.mjs publish
